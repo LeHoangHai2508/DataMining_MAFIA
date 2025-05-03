@@ -1,3 +1,5 @@
+import os
+import time
 from django.shortcuts import render,redirect,reverse
 from . import forms,models
 from django.http import HttpResponseRedirect,HttpResponse
@@ -6,6 +8,23 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib import messages
 from django.conf import settings
+from collections import defaultdict
+from . import models
+from django.db.models import Prefetch
+from django.shortcuts import render, redirect
+from .forms import ProductCSVForm, TransactionCSVForm
+from io import TextIOWrapper
+from .models import Transaction, Orders, Product
+import csv, ast
+from .mafia import find_maximal_itemsets, build_tidsets, mafia
+from itertools import combinations
+from .models import AssociationRule
+from django.core.files.base import ContentFile
+import requests
+from django.contrib.staticfiles import finders
+
+
+
 
 def home_view(request):
     products=models.Product.objects.all()
@@ -128,6 +147,90 @@ def admin_products_view(request):
     products=models.Product.objects.all()
     return render(request,'ecom/admin_products.html',{'products':products})
 
+@login_required(login_url='adminlogin')
+def import_products_csv(request):
+   # Load form + existing products
+    products = Product.objects.all()
+    form = ProductCSVForm(request.POST or None, request.FILES or None)
+
+    if request.method == 'POST' and form.is_valid():
+        csv_file = form.cleaned_data['csv_file']
+        # Kiểm tra extension .csv
+        if not csv_file.name.lower().endswith('.csv'):
+            messages.error(request, 'File phải có định dạng .csv')
+            return redirect('import-products-csv')
+
+        # Đọc nội dung
+        data_lines = csv_file.read().decode('utf-8').splitlines()
+        reader = csv.DictReader(data_lines)
+        created = 0
+
+        for idx, row in enumerate(reader, start=1):
+            name = row.get('name', '').strip()
+            price = row.get('price', '').strip()
+            desc  = row.get('description', '').strip()[:40]
+            img   = row.get('image', '').strip()
+
+            print(f"[DEBUG] Row {idx}: name={name}, price={price}, image={img}")
+
+            # Tạo đối tượng nhưng chưa save
+            try:
+                price_int = int(price)
+            except ValueError:
+                messages.warning(request, f"Row {idx}: Giá không hợp lệ, skip")
+                continue
+
+            product = Product(
+                name=name,  # Không thêm timestamp
+                price=price_int,
+                description=desc
+            )
+
+            # Xử lý image
+            if img.lower().startswith('http://') or img.lower().startswith('https://'):
+                # Download từ URL
+                try:
+                    resp = requests.get(img, timeout=10)
+                    resp.raise_for_status()
+                    print(f"[DEBUG] Downloaded {len(resp.content)} bytes from {img}")
+                    filename = os.path.basename(img.split('?')[0]) or f"img_{idx}.jpg"
+                    product.product_image.save(
+                        filename,
+                        ContentFile(resp.content),
+                        save=False
+                    )
+                    print(f"[DEBUG] Saved image to product_image/{filename}")
+                except Exception as e:
+                    print(f"[DEBUG] Error downloading {img}: {e}")
+                    messages.warning(request, f"Row {idx}: Không tải được ảnh từ URL")
+            else:
+                # Fallback static
+                static_path = finders.find(img)
+                if static_path and os.path.isfile(static_path):
+                    with open(static_path, 'rb') as f:
+                        data = f.read()
+                        product.product_image.save(
+                            os.path.basename(img),
+                            ContentFile(data),
+                            save=False
+                        )
+                    print(f"[DEBUG] Copied static {img} into media/product_image/")
+                else:
+                    print(f"[DEBUG] Static image not found: {img}")
+                    messages.warning(request, f"Row {idx}: Không tìm thấy static image {img}")
+
+            # Save product
+            product.save()
+            created += 1
+
+        messages.success(request, f'Imported {created} products!')
+        # Sau khi import xong, làm mới form
+        return redirect('import-products-csv')
+
+    return render(request, 'ecom/import_products.html', {
+        'form': form,
+        'products': products,
+    })
 
 # admin add product by clicking on floating button
 @login_required(login_url='adminlogin')
@@ -222,33 +325,28 @@ def search_view(request):
     return render(request,'ecom/index.html',{'products':products,'word':word,'product_count_in_cart':product_count_in_cart})
 
 
-# any one can add product to cart, no need of signin
-def add_to_cart_view(request,pk):
-    products=models.Product.objects.all()
+# Anyone can add product to cart
+def add_to_cart_view(request, pk):
+    product = models.Product.objects.get(id=pk)
 
-    #for cart counter, fetching products ids added by customer from cookies
+    # Xử lý cookie để thêm sản phẩm vào giỏ hàng
     if 'product_ids' in request.COOKIES:
         product_ids = request.COOKIES['product_ids']
-        counter=product_ids.split('|')
-        product_count_in_cart=len(set(counter))
-    else:
-        product_count_in_cart=1
-
-    response = render(request, 'ecom/index.html',{'products':products,'product_count_in_cart':product_count_in_cart})
-
-    #adding product id to cookies
-    if 'product_ids' in request.COOKIES:
-        product_ids = request.COOKIES['product_ids']
-        if product_ids=="":
-            product_ids=str(pk)
+        if product_ids == "":
+            product_ids = str(pk)
         else:
-            product_ids=product_ids+"|"+str(pk)
-        response.set_cookie('product_ids', product_ids)
+            product_ids = product_ids + "|" + str(pk)
     else:
-        response.set_cookie('product_ids', pk)
+        product_ids = str(pk)
 
-    product=models.Product.objects.get(id=pk)
-    messages.info(request, product.name + ' added to cart successfully!')
+    # Thêm message thông báo
+    messages.info(request, f"✅ '{product.name}' đã được thêm vào giỏ hàng.")
+
+    # Tạo response chuyển về trang home
+    response = redirect('customer-home')
+
+    # Cập nhật cookie
+    response.set_cookie('product_ids', product_ids)
 
     return response
 
@@ -393,39 +491,54 @@ def customer_address_view(request):
 #then only this view should be accessed
 @login_required(login_url='customerlogin')
 def payment_success_view(request):
-    # Here we will place order | after successful payment
-    # we will fetch customer  mobile, address, Email
-    # we will fetch product id from cookies then respective details from db
-    # then we will create order objects and store in db
-    # after that we will delete cookies because after order placed...cart should be empty
-    customer=models.Customer.objects.get(user_id=request.user.id)
-    products=None
-    email=None
-    mobile=None
-    address=None
-    if 'product_ids' in request.COOKIES:
-        product_ids = request.COOKIES['product_ids']
-        if product_ids != "":
-            product_id_in_cart=product_ids.split('|')
-            products=models.Product.objects.all().filter(id__in = product_id_in_cart)
-            # Here we get products list that will be ordered by one customer at a time
+    from .models import Orders, Transaction, Product, Customer
+    customer = Customer.objects.get(user_id=request.user.id)
 
-    # these things can be change so accessing at the time of order...
-    if 'email' in request.COOKIES:
-        email=request.COOKIES['email']
-    if 'mobile' in request.COOKIES:
-        mobile=request.COOKIES['mobile']
-    if 'address' in request.COOKIES:
-        address=request.COOKIES['address']
+    product_ids = request.COOKIES.get('product_ids', '')
+    email = request.COOKIES.get('email', '')
+    mobile = request.COOKIES.get('mobile', '')
+    address = request.COOKIES.get('address', '')
 
-    # here we are placing number of orders as much there is a products
-    # suppose if we have 5 items in cart and we place order....so 5 rows will be created in orders table
-    # there will be lot of redundant data in orders table...but its become more complicated if we normalize it
+    products = []
+    if product_ids:
+        product_id_in_cart = product_ids.split('|')
+        products = Product.objects.filter(id__in=product_id_in_cart)
+
+    # Đặt hàng như cũ
     for product in products:
-        models.Orders.objects.get_or_create(customer=customer,product=product,status='Pending',email=email,mobile=mobile,address=address)
+        order, created = Orders.objects.get_or_create(
+            customer=customer,
+            product=product,
+            status='Pending',
+            email=email,
+            mobile=mobile,
+            address=address
+        )
+        Transaction.objects.get_or_create(order=order, product=product, quantity=1)
 
-    # after order placed cookies should be deleted
-    response = render(request,'ecom/payment_success.html')
+    # -------------------------
+    # GỢI Ý SẢN PHẨM SAU THANH TOÁN
+    # -------------------------
+    # Lấy luật từ session (đã lưu khi sinh luật)
+    rules = request.session.get('mafia_rules', [])
+    cart_items = set(p.name for p in products)
+    suggested_products = set()
+
+    for rule in rules:
+        lhs = set(rule['lhs'].split(', '))
+        rhs = set(rule['rhs'].split(', '))
+        if lhs.issubset(cart_items):
+            suggested_products.update(rhs - cart_items)
+
+    # Lấy thông tin sản phẩm được gợi ý
+    recommended_products = Product.objects.filter(name__in=suggested_products)
+
+    # -------------------------
+    # KẾT THÚC - Trả về view với dữ liệu
+    # -------------------------
+    response = render(request, 'ecom/payment_success.html', {
+        'recommended_products': recommended_products
+    })
     response.delete_cookie('product_ids')
     response.delete_cookie('email')
     response.delete_cookie('mobile')
@@ -434,19 +547,49 @@ def payment_success_view(request):
 
 
 
-
 @login_required(login_url='customerlogin')
 @user_passes_test(is_customer)
 def my_order_view(request):
-    customer=models.Customer.objects.get(user_id=request.user.id)
-    orders=models.Orders.objects.all().filter(customer_id = customer)
-    ordered_products=[]
+    customer = models.Customer.objects.get(user_id=request.user.id)
+    orders = models.Orders.objects.filter(customer=customer)
+
+    ordered_products = []
+    basket_items = set()
+    
     for order in orders:
-        ordered_product=models.Product.objects.all().filter(id=order.product.id)
-        ordered_products.append(ordered_product)
+        product = models.Product.objects.get(id=order.product.id)
+        ordered_products.append(([product], order))
+        basket_items.add(product.name.lower().strip())  # chuẩn hoá để so sánh
 
-    return render(request,'ecom/my_order.html',{'data':zip(ordered_products,orders)})
+    # ✅ Lấy tất cả luật từ DB
+    rules = AssociationRule.objects.all()
+    print("🎯 Basket Items:", basket_items)
+    print("📋 Total Rules Loaded:", rules.count())
 
+    suggestions = set()
+
+    for rule in rules:
+        lhs = set(item.strip().lower() for item in rule.lhs.split(','))
+        rhs = set(item.strip() for item in rule.rhs.split(','))
+
+        if lhs.issubset(basket_items):
+            print(f"✅ Rule Matched: {lhs} => {rhs}")
+            suggestions.update(rhs - basket_items)
+        else:
+            print(f"❌ Rule Not Matched: {lhs} => {rhs}")
+
+    print("✨ Suggested Items:", suggestions)
+
+    # ✅ Chuẩn hoá tên để tìm đúng sản phẩm trong DB
+    standardized_suggestions = [s.strip().title() for s in suggestions]
+    recommended_products = models.Product.objects.filter(name__in=standardized_suggestions)
+
+    print("📦 Recommended Products from DB:", list(recommended_products.values('id', 'name')))
+
+    return render(request, 'ecom/my_order.html', {
+        'data': ordered_products,
+        'recommended_products': recommended_products,
+    })
 
 
 
@@ -539,3 +682,270 @@ def contactus_view(request):
             send_mail(str(name)+' || '+str(email),message, settings.EMAIL_HOST_USER, settings.EMAIL_RECEIVING_USER, fail_silently = False)
             return render(request, 'ecom/contactussuccess.html')
     return render(request, 'ecom/contactus.html', {'form':sub})
+
+
+@login_required(login_url='adminlogin')
+def view_transactions(request):
+    form = TransactionCSVForm()
+
+    # Khởi tạo dữ liệu mặc định nếu không phải POST
+    table_data = request.session.get('mafia_data', [])
+    freq_table_sorted = []
+    maximal_table = []
+
+    # Khi người dùng POST CSV lên
+    if request.method == 'POST':
+        form = TransactionCSVForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = request.FILES['csv_file']
+            if not csv_file.name.endswith('.csv'):
+                messages.error(request, 'Vui lòng tải lên file CSV.')
+            else:
+                try:
+                    csv_reader = csv.DictReader(TextIOWrapper(csv_file.file, encoding='utf-8'))
+                    table_data = []
+
+                    for row in csv_reader:
+                        transaction_id = row.get('Transaction ID')
+                        items_str = row.get('Items')
+
+                        if not transaction_id or not items_str:
+                            continue
+
+                        try:
+                            items = ast.literal_eval(items_str)
+                            formatted_items = ', '.join(sorted(items))
+                            table_data.append({
+                                'order_id': transaction_id,
+                                'items': formatted_items
+                            })
+                        except Exception as e:
+                            messages.warning(request, f"Lỗi dòng {transaction_id}: {str(e)}")
+
+                    request.session['mafia_data'] = table_data
+                    messages.success(request, f"Đã import {len(table_data)} giao dịch.")
+                except Exception as e:
+                    messages.error(request, f"Lỗi xử lý file: {str(e)}")
+
+    # Tính tần suất sản phẩm nếu có dữ liệu
+    if table_data:
+        freq_count = {}
+        for row in table_data:
+            items = [item.strip() for item in row['items'].split(',')]
+            for item in items:
+                freq_count.setdefault(item, set()).add(row['order_id'])
+
+        freq_table = [{
+            'product_name': product,
+            'order_ids': sorted(order_ids),
+            'count': len(order_ids)
+        } for product, order_ids in freq_count.items()]
+        freq_table_sorted = sorted(freq_table, key=lambda x: -x['count'])
+
+        # Gọi thuật toán MAFIA
+        from .mafia import find_maximal_itemsets
+        transactions = [[item.strip() for item in row['items'].split(',')] for row in table_data]
+        mfi_result = find_maximal_itemsets(transactions, min_support=0.3)
+        # Lưu vào session để gợi ý sau này
+        request.session['mafia_maximal_itemsets'] = [list(s) for s in mfi_result]
+
+        maximal_table = [{
+            'index': i + 1,
+            'itemset': ', '.join(sorted(itemset)),
+            'length': len(itemset)
+        } for i, itemset in enumerate(mfi_result)]
+
+    return render(request, 'ecom/view_transactions_mafia.html', {
+        'form': form,
+        'table_data': table_data,
+        'freq_table': freq_table_sorted,
+        'maximal_table': maximal_table
+    })
+
+
+
+
+@login_required(login_url='adminlogin')
+def basket_market_view(request):
+    from .mafia import find_maximal_itemsets
+    from .models import AssociationRule
+
+    result = []
+
+    # Lấy min_support từ form (dạng chuỗi, thay dấu phẩy nếu có)
+    min_support = float(request.GET.get('min_support', '0.3').replace(',', '.'))
+
+    # Lấy min_conf từ form, KHÔNG gán mặc định
+    min_conf_str = request.GET.get('min_conf', '').replace(',', '.')
+    if min_conf_str.strip():
+        try:
+            min_confidence = float(min_conf_str)
+            if not (0 <= min_confidence <= 1):
+                messages.warning(request, "min_conf phải nằm trong khoảng [0, 1].")
+                min_confidence = None
+        except ValueError:
+            messages.warning(request, "min_conf không hợp lệ.")
+            min_confidence = None
+    else:
+        min_confidence = None
+
+    # Lấy giao dịch từ session
+    transactions = request.session.get('mafia_data', [])
+    if not transactions:
+        messages.warning(request, "Vui lòng import transaction trước.")
+        return redirect('view-transactions')
+
+    # Tạo danh sách basket
+    basket = [[item.strip() for item in row['items'].split(',')] for row in transactions]
+
+    # Sinh tập phổ biến cực đại
+    maximal_sets = find_maximal_itemsets(basket, min_support=min_support)
+
+    result = [{
+        'index': i + 1,
+        'itemset': ', '.join(sorted(itemset)),
+        'length': len(itemset)
+    } for i, itemset in enumerate(maximal_sets)]
+
+    # Sinh luật nếu có min_conf được nhập
+    if min_confidence is not None:
+        AssociationRule.objects.all().delete()
+        generate_association_rules(maximal_sets, basket, min_confidence)
+        total_rules = AssociationRule.objects.count()
+        messages.success(request, f"Đã sinh {total_rules} luật với min_conf = {min_confidence}")
+    else:
+        messages.info(request, "Không sinh luật vì chưa nhập min_conf.")
+
+    return render(request, 'ecom/basket_market.html', {
+        'result': result,
+        'min_support': min_support,
+        'min_conf': min_confidence
+    })
+
+
+
+@login_required(login_url='adminlogin')
+def mafia_recommend_view(request):
+    # Lấy dữ liệu từ session
+    table_data = request.session.get('mafia_data', [])
+    if not table_data:
+        messages.warning(request, "Vui lòng import transaction trước.")
+        return redirect('view-transactions')
+
+    transactions = [[item.strip() for item in row['items'].split(',')] for row in table_data]
+
+    # Lấy ngưỡng từ request
+    minsup_ratio = float(request.POST.get('minsup', 0.3)) if request.method == 'POST' else 0.3
+    min_conf = float(request.POST.get('min_conf', 0.3)) if request.method == 'POST' else 0.3
+
+    minsup = max(int(minsup_ratio * len(transactions)), 1)
+
+    # Chuyển dữ liệu về dạng bitmap (tidsets)
+    tidsets = defaultdict(set)
+    for tid, transaction in enumerate(transactions):
+        for item in transaction:
+            tidsets[item].add(tid)
+
+    all_tids = set(range(len(transactions)))
+    items = sorted(tidsets.keys())
+
+    # Tạo các itemsets phổ biến
+    MFI = []
+    for i in range(1, len(items) + 1):  # Kiểm tra từ độ dài 1 đến độ dài các itemsets
+        for comb in combinations(items, i):
+            comb_set = set(comb)
+            support = len(all_tids.intersection(*[tidsets[item] for item in comb_set]))
+            if support >= minsup:
+                MFI.append(comb_set)
+
+    # Sinh các luật từ các itemsets có độ dài >= 2
+    rules = []
+    total_transactions = len(transactions)
+
+    # Lấy tất cả các itemsets có độ dài >= 2
+    for itemset in MFI:
+        if len(itemset) < 2:
+            continue
+        # Kiểm tra mọi tập con của itemset có độ dài >= 2
+        for i in range(1, len(itemset)):  # Bắt đầu từ độ dài 1 đến độ dài itemset-1
+            for lhs in combinations(itemset, i):
+                lhs = set(lhs)
+                rhs = itemset - lhs
+                # Tính toán hỗ trợ và confidence
+                lhs_count = sum(1 for t in transactions if lhs.issubset(set(t)))
+                both_count = sum(1 for t in transactions if lhs.issubset(set(t)) and rhs.issubset(set(t)))
+                if lhs_count == 0:
+                    continue
+                confidence = both_count / lhs_count
+                if confidence >= min_conf:
+                    rhs_count = sum(1 for t in transactions if rhs.issubset(set(t)))
+                    lift = confidence / (rhs_count / total_transactions) if rhs_count else 0
+                    rules.append({
+                        'lhs': ', '.join(sorted(lhs)),
+                        'rhs': ', '.join(sorted(rhs)),
+                        'support': round(both_count / total_transactions, 2),
+                        'confidence': round(confidence, 2),
+                        'lift': round(lift, 2),
+                        'frequency': both_count
+                    })
+
+        # Sắp xếp các luật theo confidence và support
+    sorted_rules = sorted(rules, key=lambda x: (-x['confidence'], -x['support']))
+
+    # Lưu luật vào session
+    request.session['mafia_rules'] = sorted_rules
+
+    return render(request, 'ecom/mafia_recommend.html', {
+        'rules': sorted_rules,
+        'minsup': minsup_ratio,
+        'min_conf': min_conf
+    })
+
+
+def generate_association_rules(mfi_itemsets, transactions, min_confidence):
+    from itertools import combinations
+
+    def count_support(itemset):
+        return sum(1 for t in transactions if itemset.issubset(set(t)))
+
+    rules = []
+    total_transactions = len(transactions)
+
+    # Xoá luật cũ (tuỳ chỉnh nếu muốn giữ lịch sử)
+    AssociationRule.objects.all().delete()
+
+    for itemset in mfi_itemsets:
+        itemset = set(itemset)
+        if len(itemset) < 2:
+            continue
+
+        for i in range(1, len(itemset)):
+            for lhs in combinations(itemset, i):
+                lhs = set(lhs)
+                rhs = itemset - lhs
+                if not rhs:
+                    continue
+
+                lhs_support = count_support(lhs)
+                full_support = count_support(itemset)
+
+                if lhs_support == 0:
+                    continue
+
+                confidence = full_support / lhs_support
+
+                if confidence >= min_confidence:
+                    rhs_support = count_support(rhs)
+                    lift = confidence / (rhs_support / total_transactions) if rhs_support else 0
+
+                    # Lưu luật vào DB
+                    AssociationRule.objects.create(
+                        lhs=', '.join(sorted(lhs)),
+                        rhs=', '.join(sorted(rhs)),
+                        support=round(full_support / total_transactions, 2),
+                        confidence=round(confidence, 2),
+                        lift=round(lift, 2),
+                        frequency=full_support
+                    )
+
+    return AssociationRule.objects.all().order_by('-confidence', '-support')

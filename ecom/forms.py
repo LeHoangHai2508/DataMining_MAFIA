@@ -43,3 +43,9 @@ class ContactusForm(forms.Form):
     Name = forms.CharField(max_length=30)
     Email = forms.EmailField()
     Message = forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows': 3, 'cols': 30}))
+
+class ProductCSVForm(forms.Form):
+    csv_file = forms.FileField(label='Select CSV file')
+
+class TransactionCSVForm(forms.Form):
+    csv_file = forms.FileField(label='Select CSV File')

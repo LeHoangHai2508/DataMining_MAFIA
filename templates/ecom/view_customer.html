@@ -22,10 +22,6 @@
     }
   </style>
 </head>
-<!--
-written By : sumit kumar
-facebook : fb.com/sumit.luv
--->
 <div class="container">
   <div class="panel panel-primary">
     <div class="panel-heading">
@@ -48,17 +44,15 @@ facebook : fb.com/sumit.luv
         <td> <img src="{% static c.profile_pic.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
         <td>{{c.mobile}}</td>
         <td>{{c.address}}</td>
-        <td><a class="btn btn-primary btn-xs" href="{% url 'update-customer' c.id  %}"><span class="glyphicon glyphicon-edit"></span></a></td>
-        <td><a class="btn btn-danger btn-xs" href="{% url 'delete-customer' c.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
+        <td><a class="btn btn-primary btn-xs" href="{% url 'update-customer' c.id  %}"><span
+              class="glyphicon glyphicon-edit"></span></a></td>
+        <td><a class="btn btn-danger btn-xs" href="{% url 'delete-customer' c.id  %}"><span
+              class="glyphicon glyphicon-trash"></span></a></td>
 
       </tr>
       {% endfor %}
     </table>
   </div>
 </div>
-<!--
-developed By : sumit kumar
-facebook : fb.com/sumit.luv
-youtube : youtube.com/lazycoders
--->
+
 {% endblock content %}

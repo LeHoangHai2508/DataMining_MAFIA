@@ -1,0 +1,32 @@
+{% extends 'ecom/admin_base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h4>Import Transactions from CSV</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ form.csv_file.label_tag }}
+                    {% render_field form.csv_file class="form-control" %}
+                </div>
+                <button type="submit" class="btn btn-primary">Import</button>
+            </form>
+            <hr>
+            <p><strong>CSV Format:</strong></p>
+            <pre>
+order_id,product_name
+1,Milk
+1,Bread
+1,Butter
+2,Cheese
+2,Milk
+            </pre>
+        </div>
+    </div>
+</div>
+{% endblock %}

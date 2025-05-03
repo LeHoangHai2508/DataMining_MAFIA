@@ -1,15 +1,12 @@
-"""
 
-Developed By : sumit kumar
-facebook : fb.com/sumit.luv
-Youtube :youtube.com/lazycoders
-
-
-"""
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path
 from ecom import views
 from django.contrib.auth.views import LoginView,LogoutView
+from django.conf.urls.static import static
+
+from ecommerce import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',views.home_view,name=''),
@@ -31,12 +28,16 @@ urlpatterns = [
 
     path('admin-products', views.admin_products_view,name='admin-products'),
     path('admin-add-product', views.admin_add_product_view,name='admin-add-product'),
+    path('import-products-csv', views.import_products_csv,name='import-products-csv'),
     path('delete-product/<int:pk>', views.delete_product_view,name='delete-product'),
     path('update-product/<int:pk>', views.update_product_view,name='update-product'),
 
     path('admin-view-booking', views.admin_view_booking_view,name='admin-view-booking'),
     path('delete-order/<int:pk>', views.delete_order_view,name='delete-order'),
     path('update-order/<int:pk>', views.update_order_view,name='update-order'),
+    path('view-transactions/', views.view_transactions, name='view-transactions'),
+    path('basket-market/', views.basket_market_view, name='basket-market'),
+    path('recommend-mafia/', views.mafia_recommend_view, name='recommend-mafia'),
 
 
     path('customersignup', views.customer_signup_view),
@@ -56,3 +57,6 @@ urlpatterns = [
 
 
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

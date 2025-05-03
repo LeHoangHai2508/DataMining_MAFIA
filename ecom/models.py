@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-# Create your models here.
+
+#Model để lưu trữ dữ liệu transaction
 class Customer(models.Model):
     user=models.OneToOneField(User,on_delete=models.CASCADE)
     profile_pic= models.ImageField(upload_to='profile_pic/CustomerProfilePic/',null=True,blank=True)
@@ -47,3 +48,29 @@ class Feedback(models.Model):
     date= models.DateField(auto_now_add=True,null=True)
     def __str__(self):
         return self.name
+
+
+class Transaction(models.Model):
+    order = models.ForeignKey(Orders, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('order', 'product')
+
+    def __str__(self):
+        return f"{self.order.id} - {self.product.name}"
+
+
+class AssociationRule(models.Model):
+    lhs = models.TextField()  # vế trái
+    rhs = models.TextField()  # vế phải
+    support = models.FloatField()
+    confidence = models.FloatField()
+    lift = models.FloatField()
+    frequency = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.lhs} → {self.rhs} (conf: {self.confidence:.2f})"

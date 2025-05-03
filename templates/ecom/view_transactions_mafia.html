@@ -1,0 +1,74 @@
+{% extends 'ecom/admin_base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Transaction Dataset (1 Order = 1 Transaction)</h2>
+
+    <!-- Import CSV Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="form-inline">
+                {% csrf_token %}
+                <div class="form-group mr-2">
+                    {% render_field form.csv_file class="form-control-file" %}
+                </div>
+                <button type="submit" class="btn btn-success">Import CSV</button>
+            </form>
+            <small class="text-muted mt-2 d-block">Format: Transaction ID, Items (as list)</small>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if table_data %}
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td>{{ row.order_id }}</td>
+                        <td>{ {{ row.items }} }</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No transaction data found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <h4 class="mt-5">Tần suất xuất hiện của sản phẩm</h4>
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Danh sách giao dịch chứa</th>
+                <th>Số lần xuất hiện</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in freq_table %}
+            <tr>
+                <td>{{ row.product_name }}</td>
+                <td>{{ row.order_ids }}</td>
+                <td>{{ row.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-info">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

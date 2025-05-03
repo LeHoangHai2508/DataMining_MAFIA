@@ -1,0 +1,102 @@
+name,price,description,image
+Apples,840702,Affordable price,product_image/Apples.jpg
+Bananas,94557,Customer favorite,product_image/Bananas.jpg
+Oranges,365443,Quality product,product_image/Oranges.jpg
+Tomatoes,280773,Quality product,product_image/Tomatoes.jpg
+Carrots,852259,Customer favorite,product_image/Carrots.jpg
+Cucumber,366392,Affordable price,product_image/Cucumber.jpg
+Lettuce,394833,Everyday essential,product_image/Lettuce.jpg
+Broccoli,283598,Customer favorite,product_image/Broccoli.jpg
+Potatoes,199667,Customer favorite,product_image/Potatoes.jpg
+Onions,74267,Healthy and fresh,product_image/onions.jpg
+Garlic,590664,Customer favorite,product_image/Garlic.jpg
+Bell Peppers,731716,Everyday essential,product_image/BellPeppers.jpg
+Spinach,84204,Quality product,product_image/Spinach.jpg
+Cabbage,359292,Everyday essential,product_image/Cabbage.jpg
+Lemons,161266,Best seller item,product_image/Lemons.jpg
+Limes,679806,Fresh and tasty,product_image/Limes.jpg
+Grapes,622808,Healthy and fresh,product_image/grapes.jpg
+Strawberries,10352,Healthy and fresh,product_image/Strawberries.jpg
+Blueberries,577099,Affordable price,product_image/Blueberries.jpg
+Watermelon,880742,Affordable price,product_image/Watermelon.jpg
+Bread,270670,Popular choice,product_image/Bread.jpg
+Rolls/Buns,557193,Healthy and fresh,product_image/rollsbuns.jpg
+Bagels,182496,Fresh and tasty,product_image/Bagels.jpg
+Croissants,391444,Best seller item,product_image/Croissants.jpg
+Cereal,352532,Everyday essential,product_image/Cereal.jpg
+Oatmeal,542486,Popular choice,product_image/Oatmeal.jpg
+Rice,60674,Best seller item,product_image/Rice.jpg
+Pasta,326384,Quality product,product_image/pasta.jpg
+Flour,330785,Everyday essential,product_image/flour.jpg
+Tortillas,656274,Healthy and fresh,product_image/Tortillas.jpg
+Milk,22870,Popular choice,product_image/Milk.jpg
+Cheese,857614,Customer favorite,product_image/Cheese.jpg
+Butter,138098,Quality product,product_image/butter.jpg
+Yogurt,879032,Customer favorite,product_image/yogurt.jpg
+Cream,479770,Popular choice,product_image/Cream.jpg
+Eggs,445541,Customer favorite,product_image/Eggs.jpg
+Sour Cream,478327,Best seller item,product_image/SourCream.jpg
+Cottage Cheese,589167,Fresh and tasty,product_image/CottageCheese.jpg
+Ice Cream,299353,Quality product,product_image/icecream.jpg
+Whipped Cream,79071,Popular choice,product_image/WhippedCream.jpg
+Chicken,826009,Fresh and tasty,product_image/chicken.jpg
+Beef,751183,Everyday essential,product_image/beef.jpg
+Pork,345829,Everyday essential,product_image/pork.jpg
+Fish,742533,Healthy and fresh,product_image/fish.jpg
+Shrimp,256429,Best seller item,product_image/Shrimp.jpg
+Bacon,688665,Popular choice,product_image/Bacon.jpg
+Sausages,104719,Quality product,product_image/Sausages.jpg
+Ham,908636,Customer favorite,product_image/ham.jpg
+Turkey,139961,Quality product,product_image/turkey.jpg
+Ground Beef,368255,Fresh and tasty,product_image/GroundBeef.jpg
+Canned Beans,660417,Everyday essential,product_image/CannedBeans.jpg
+Canned Corn,444120,Customer favorite,product_image/CannedCorn.jpg
+Canned Tuna,499806,Popular choice,product_image/CannedTuna.jpg
+Canned Tomatoes,95636,Best seller item,product_image/CannedTomatoes.jpg
+Peanut Butter,973412,Best seller item,product_image/PeanutButter.jpg
+Jam/Jelly,285784,Affordable price,product_image/JamJelly.jpg
+Honey,779572,Everyday essential,product_image/Honey.jpg
+Pasta Sauce,51491,Customer favorite,product_image/PastaSauce.jpg
+Soup,630987,Affordable price,product_image/Soup.jpg
+Pickles,247514,Popular choice,product_image/Pickles.jpg
+Salt,975886,Fresh and tasty,product_image/salt.jpg
+Pepper,308528,Everyday essential,product_image/Pepper.jpg
+Sugar,777263,Best seller item,product_image/sugar.jpg
+Ketchup,290316,Quality product,product_image/Ketchup.jpg
+Mustard,291469,Affordable price,product_image/Mustard.jpg
+Mayonnaise,516438,Healthy and fresh,product_image/Mayonnaise.jpg
+Soy Sauce,460108,Everyday essential,product_image/SoySauce.jpg
+Hot Sauce,817156,Healthy and fresh,product_image/HotSauce.jpg
+Vinegar,285121,Fresh and tasty,product_image/vinegar.jpg
+Cooking Oil,780966,Healthy and fresh,product_image/CookingOil.jpg
+Chocolate,497060,Affordable price,product_image/chocolate.jpg
+Chips,746480,Popular choice,product_image/Chips.jpg
+Cookies,512639,Fresh and tasty,product_image/Cookies.jpg
+Crackers,343692,Best seller item,product_image/Crackers.jpg
+Popcorn,682800,Popular choice,product_image/popcorn.jpg
+Nuts,771962,Everyday essential,product_image/Nuts.jpg
+Granola Bars,263369,Fresh and tasty,product_image/GranolaBars.jpg
+Candy,981006,Affordable price,product_image/candy.jpg
+Pretzels,802038,Best seller item,product_image/Pretzels.jpg
+Dried Fruit,794072,Customer favorite,product_image/DriedFruit.jpg
+Shampoo,925745,Best seller item,product_image/Shampoo.jpg
+Soap,729321,Popular choice,product_image/soap.jpg
+Toothpaste,900502,Popular choice,product_image/Toothpaste.jpg
+Toothbrush,631389,Best seller item,product_image/Toothbrush.jpg
+Deodorant,484792,Popular choice,product_image/Deodorant.jpg
+Toilet Paper,780986,Customer favorite,product_image/ToiletPaper.jpg
+Paper Towels,881224,Fresh and tasty,product_image/PaperTowels.jpg
+Laundry Detergent,948171,Quality product,product_image/LaundryDetergent.jpg
+Dish Soap,944255,Best seller item,product_image/DishSoap.jpg
+Cleaning Spray,872782,Popular choice,product_image/CleaningSpray.jpg
+Baby Diapers,18693,Best seller item,product_image/BabyDiapers.jpg
+Baby Wipes,843282,Customer favorite,product_image/BabyWipes.jpg
+Baby Food,430252,Popular choice,product_image/BabyFood.jpg
+Pet Food,637041,Healthy and fresh,product_image/PetFood.jpg
+Cat Litter,60493,Quality product,product_image/CatLitter.jpg
+Dog Treats,964847,Everyday essential,product_image/DogTreats.jpg
+Pet Shampoo,798259,Affordable price,product_image/PetShampoo.jpg
+Baby Formula,313948,Popular choice,product_image/BabyFormula.jpg
+Baby Lotion,240182,Best seller item,product_image/BabyLotion.jpg
+Baby Shampoo,432593,Popular choice,product_image/BabyShampoo.jpg
+Coffee,155853,Delicouse,product_image/coffee.jpg

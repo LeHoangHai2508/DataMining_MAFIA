@@ -1,0 +1,92 @@
+{% extends 'ecom/admin_base.html' %}
+{% load widget_tweaks %}
+{% block content %}
+
+<head>
+    <style media="screen">
+        a:link {
+            text-decoration: none;
+        }
+
+        .note {
+            text-align: center;
+            height: 80px;
+            background: -webkit-linear-gradient(left, #0072ff, #8811c5);
+            color: #fff;
+            font-weight: bold;
+            line-height: 80px;
+        }
+
+        .form-content {
+            padding: 5%;
+            border: 1px solid #ced4da;
+            margin-bottom: 2%;
+        }
+
+        .form-control {
+            border-radius: 1.5rem;
+        }
+
+        .btnSubmit {
+            border: none;
+            border-radius: 1.5rem;
+            padding: 1%;
+            width: 20%;
+            cursor: pointer;
+            background: #0062cc;
+            color: #fff;
+        }
+    </style>
+
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+</head>
+
+<br><br><br><br><br><br>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="container register-form">
+        <div class="form">
+            <div class="note">
+                <p>Import Products from CSV</p>
+            </div>
+            <div class="form-content">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            {% render_field form.csv_file class="form-control" placeholder="Select CSV file" %}
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btnSubmit">Import</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5>CSV File Format</h5>
+        </div>
+        <div class="card-body">
+            <p>Your CSV file should have the following columns:</p>
+            <ul>
+                <li>name (string) - Product name</li>
+                <li>price (integer) - Product price in your currency</li>
+                <li>description (string) - Product description</li>
+            </ul>
+            <p>Example:</p>
+            <pre>
+name,price,description
+Tropical Fruit,15000,Fresh tropical fruits including mango, pineapple, and papaya
+Whole Milk,25000,1 liter of fresh whole milk
+Pip Fruit,12000,Assorted pip fruits including apples and pears
+            </pre>
+            <p>Note: Make sure the price is a valid integer number.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

@@ -8,13 +8,17 @@
     @page {
       size: A4;
       margin: 1cm;
+    }
 
-      @frame footer {
-        -pdf-frame-content: footerContent;
-        bottom: 0cm;
-        margin-left: 9cm;
-        margin-right: 9cm;
-        height: 1cm;
+    @media print {
+      @page {
+        @frame footer {
+          -pdf-frame-content: footerContent;
+          bottom: 0cm;
+          margin-left: 9cm;
+          margin-right: 9cm;
+          height: 1cm;
+        }
       }
     }
 
@@ -149,7 +153,7 @@
               <td>
                 Customer Mobile :<br>
                 {{customerMobile}}<br><br>
-                  Shipment Addres :<br> {{shipmentAddress}}
+                Shipment Addres :<br> {{shipmentAddress}}
 
               </td>
             </tr>
@@ -164,7 +168,13 @@
             <tr>
               <td>
                 Product Image :<br>
-                 <img src="{% static product_image.url %}" alt="Profile Pic" height="40px" width="40px" /><br><br>
+                {% if product_image %}
+                <img src="{% static product_image.url %}" alt="Product Image" height="40px" width="40px" />
+                {% else %}
+                <img src="{% static 'images/default_product.png' %}" alt="Default Product Image" height="40px"
+                  width="40px" />
+                {% endif %}
+                <br><br>
                 Product Price : <br>
                 {{productPrice}}
               </td>
@@ -186,7 +196,7 @@
             <tr>
               <td>
                 Order Status :<br><br>
-                  {{orderStatus}}
+                {{orderStatus}}
               </td>
             </tr>
           </table>
@@ -194,16 +204,11 @@
       </tr>
 
 
-      
+
 
 
     </table>
   </div>
 </body>
-<!--
-developed By : sumit kumar
-facebook : fb.com/sumit.luv
-youtube : youtube.com/lazycoders
--->
 
 </html>
