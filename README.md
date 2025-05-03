@@ -1,6 +1,6 @@
 READ ME </br>
 Làm sao để chạy code </br>
-Bước 1: cd:"" link tới .venv của bài Thư mục bạn lưu trữ bài </br>
+Bước 1: cd:"" link tới Thư mục bạn lưu trữ bài </br>
 Ví dụ : cd:"C:\Users\Admin\srceen\Desktop\Python\ecommerce\ecommerce"</br>
 Bước 2: python -m venv .venv</br>
 Bước 3: .\.venv\Scripts\Activate.ps1</br>
